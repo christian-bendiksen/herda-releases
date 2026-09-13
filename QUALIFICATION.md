@@ -1,90 +1,88 @@
-# Installed-system qualification: dev-20260913.5
+# Native system update qualification: dev-20260913.7
 
-The first signed development release updates an existing native Herda
-installation without reinstalling it. The tested artifact is available from
-[Herda releases](https://github.com/christian-bendiksen/herda-releases/releases/tag/dev-20260913.5).
-See [system update instructions](README.md) before the first migration.
+Current installation media starts with native boot evidence. The first complete
+update uses the same single-trial-reboot flow as subsequent updates. The portable
+updater and two-pass migration for older development images have been removed.
 
-## Exact candidate
+## Exact artifacts
 
-- Version: `dev-20260913.5`; publisher sequence: `5`.
-- Manifest SHA-256: `b2b7e474c81d3f86611904901e8d7e10efbe72dfa2fcc0fc65033adf541838f0`.
-- Bootstrap SHA-256: `b5b4116de629720b513b20049710d2e7e56a07dc56821d2a23df86719d8622e2`.
+- Release: `dev-20260913.7`, publisher sequence `7`, updater API `2`.
+- Signed manifest SHA-256: `e2170c72d20d9992abbf44ab23dd55044b1115e26b469a0a04790c5993de57e1`.
+- USB image: `herda-installer-native-r3-x86_64.img`, 2,409,324,544 bytes.
+- USB image SHA-256: `657c8c4517666073c63c77cd97ad0a193e0e3af5037ccde9ffb127911827b779`.
+- Image and release Herda source: `a7c07dacd50635efa694ec9b83621ea09a55d0a7`.
 - Publisher fingerprint: `60ad738c0df1ee6d782811203ab084d08f0f0917`.
+- Package snapshot: `2026-09-12`; kernel `7.2.4-arch1-2`.
 
 | Component | Source commit |
 | --- | --- |
-| Herda | `9f173f6a57879e5379efd1529a9c90a5d475ac73` |
-| Malm | `75c39a8fee61d48ad0e9b16cd7c60474db72c0ac` |
-| Gnist | `e3e29f4082a391bd70167cfeca6e70fe9d3b2d4e` |
-| Launcher | `e22bcd55da358e946937193832a7b15d961e31b5` |
-| Smia | `5038290eaa658adf3de3652ecc9c23a11f2fcfea` |
-| Mango | `641c36fcbbe508c46f27b435d5a68d4e9b32f59f` |
-| SceneFX | `37ccd723bef49e6891156ffafce8f549f01446cc` |
+| gnist | `e3e29f4082a391bd70167cfeca6e70fe9d3b2d4e` |
+| herda | `a7c07dacd50635efa694ec9b83621ea09a55d0a7` |
+| herda-launcher | `e22bcd55da358e946937193832a7b15d961e31b5` |
+| malm | `75c39a8fee61d48ad0e9b16cd7c60474db72c0ac` |
+| mango | `641c36fcbbe508c46f27b435d5a68d4e9b32f59f` |
+| smia | `5038290eaa658adf3de3652ecc9c23a11f2fcfea` |
 
-The build used clean pinned checkouts. Uncommitted development work was excluded.
-The native payload, substrate, locked kernel archive, desktop runtime, Smia source
-and portable bootstrap were packaged and verified as six signed-manifest artifacts.
+Builds used clean pinned checkouts. Uncommitted development work was excluded.
+The five signed artifact roles are native payload, substrate, kernel, desktop
+runtime and Smia. No portable bootstrap executable or publisher private key is
+included in the release. The runtime ABI check passed for 192 ELF files and 1,215
+paths; GPT and EROFS checks passed for the USB image.
 
-## Boot matrix
+## Actual boot checks
 
-The matrix ran on September 13, 2026 against a disposable qcow2 overlay of the
-retained September 10 installed system, using KVM and UEFI with Secure Boot
-disabled. Its backing disk remained unchanged. The initial installation had 522
-packages and schema 10. The exact signed bootstrap artifact was used for
-migration; later checks used the shipped updater and retained recovery helper.
+The run used a fresh disposable 64 GiB virtual disk, KVM, UEFI and Secure Boot
+disabled on September 13, 2026. The live installer ran its normal discovery,
+review and disk-identity checks before installing. All later commands used the
+installed `/usr/bin/pkg`; no diagnostic replacement, bootstrap service override
+or manually installed signing dependency was used in this final run.
 
-| Check | Result and observed behavior |
+| Check | Observed result |
 | --- | --- |
-| Bootstrap upgrade | Passed. Real reboot and automatic health confirmation retained the original revision, kernel, view and 522 packages. Schema promotion followed successful helper confirmation. |
-| Snapshot upgrade | Passed. A complete successor booted with 541 packages, the signed release recorded as installed, healthy state and a matching canonical projection. |
-| Rolling upgrade | Passed. Resolution used the configured rolling mirror; the resulting 541-package system booted healthy and retained the rolling source policy. |
-| Interrupted-trial fallback | Passed. QMP interrupted execution after authenticated userspace handoff, before health confirmation. The next boot recovered the original software and confirmed it; resuming the staged release subsequently succeeded. |
-| Complete rollback | Passed. A real native trial restored the original view and all 522 packages, confirmed healthy. The original application declaration remained byte-identical. |
-| Configuration preservation | Passed. Nine tracked identity/configuration/home files survived the transitions. For the rolling test, only the intentionally edited source-policy file received a new expected digest. |
-| Cancellation and retry | Passed. A parameter trial was staged, cancelled and staged again without conflicting immutable boot evidence or changing the running software. |
-| Native boot parameters | Passed. The retried trial booted with `loglevel=4`; subsequent rollback/update cycles retained exactly one copy of each inherited console/default option. |
-| Managed Smia | Passed. The normal user service reconciled the managed source, recorded the exact release digest and retained profile `mango` and local overrides. |
+| Fresh installation | Passed. The initial 526-package system booted healthy with native boot evidence. OpenSSL and all required PE signing tools were available. |
+| Snapshot update | Passed. The complete 541-package successor booted healthy with the exact release recorded as installed and the canonical projection matching authority. |
+| Interrupted trial | Passed. The VM was stopped after authenticated userspace handoff, before health confirmation. The next boot recovered and confirmed the original 526-package revision. |
+| Cancellation and retry | Passed. The failed trial was cancelled through `pkg update --cancel`, then the same signed release was imported, staged and booted successfully. |
+| Full rollback | Passed. A native trial restored the original view and 526-package set, confirmed healthy, and cleared installed-release metadata. |
+| Rolling update | Passed. After choosing the rolling source, the 541-package successor booted healthy and retained `https://geo.mirror.pkgbuild.com` as its source policy. |
+| Configuration preservation | Passed. Nine tracked account, declaration, provenance, home and Malm-local files remained unchanged. Only the intentionally changed rolling source declaration received a new expected digest. |
+| Boot parameters | Passed. Repeated transitions retained exactly one copy of each inherited console option. |
+| Retained image readback | Passed twice. All four retained images were read completely after requesting cache eviction; hashes matched between passes. See the open kernel issue below. |
 
-The tracked files were machine identity, hostname, passwd/shadow, the application
-and system declarations, source provenance, a home-directory note and Malm's local
-overlay. Sensitive contents were not included in release assets.
+All 17 matrix steps completed successfully. The publication report binds all six
+required qualification checks to this exact signed manifest. It also records the
+additional readback and the open kernel issue. Local transcripts, state snapshots,
+per-step exit records and image verification accompany the report.
 
-All 24 matrix steps completed successfully. The digest-bound publication report
-contains all six required checks as `passed`; additional checks record parameter
-cancellation/retry, boot parameters and managed Smia. Local transcripts, native
-state snapshots and per-step exit records accompany that report. A bounded wait
-for asynchronous Smia completion corrected an initial harness timing race; the
-service itself completed normally without a manual reconciliation.
-
-The final trial-identity fix also passed 191 `pkg-install` library tests, 125
-`pkg-cli` binary tests and 24 dependency-boundary tests. Canonical trial policy
-identities distinguish new attempts without weakening immutable boot-evidence
-validation. Command-line composition tests cover repeated updates and explicit
-multiple-console settings.
+Targeted validation passed: 90 native state tests, 191 installation tests, 127
+package CLI unit tests, 31 CLI integration tests run serially, 29 setup tests and
+six release-composition tests. Publisher tests verify historical signed sequence
+checks without accepting retired artifact formats for client installation.
 
 ## Public delivery
 
-GitHub publication completed on September 13, 2026 at 18:24 UTC. The publisher
-verified all 28 assets, totaling 6,058,973,870 bytes, before publishing and then
-confirmed that the release was immutable.
+GitHub publication completed at `2026-09-13T20:21:09Z`. The publisher verified
+all 27 assets (6,046,075,281 bytes) and confirmed that the
+release is immutable. The healthy installed VM's own `pkg releases check` then
+verified the public feed and returned the exact manifest above. Native state
+remained unchanged and no trial was staged by this read-only check.
 
-From the upgraded installed VM, the shipped `/usr/bin/pkg` successfully verified
-the public feed with both `releases check` and `update --check`. Discovery returned
-the exact signed manifest above and zero pending package changes. A fresh HTTPS
-download of the public bootstrap matched its expected SHA-256. The checks left
-the canonical native state unchanged, healthy and running, with no staged trial.
+## Known issue and limits
 
-## Operational limits
+The VM emitted Btrfs/fs-verity `FILE CORRUPTED` kernel messages with zero-page
+hashes while reading retained substrate images. The previous release's serial
+logs contain similar messages. Two complete cache-evicted readbacks returned
+identical hashes for every image, all boot/update/rollback checks passed, and
+systemd reported no failed units. The cause remains unconfirmed; the messages
+are not treated as harmless or as proof that every read path is sound.
 
-Older installations require two reboot stages: test the recovery helper, then
-boot the full release. During the first stage, and after restoring pre-migration
-software, use `/herda/state/distribution-release/bootstrap/pkg`; the original
-`/usr/bin/pkg` predates the upgraded state format. Existing boot parameters are
-preserved, but editing them from the original recovery environment requires
-completing the upgrade first.
+The follow-up is to reproduce the warning with a minimal sealed file on this
+kernel, compare demand reads and read-ahead, and verify a kernel correction before
+changing the storage or mount policy. [The kernel's fs-verity documentation](https://docs.kernel.org/filesystems/fsverity.html)
+describes its page-cache and read-ahead verification boundaries; the suspected
+read-path interaction is an investigation direction, not a confirmed diagnosis.
 
-Desktop configuration recovery remains separate from system software rollback.
-The boot matrix covers managed Smia; isolated tests cover custom-source and
-conflict handling. This development release does not establish Secure Boot or
-general hardware qualification.
+This is a development release with a passed update workflow, not general storage,
+Secure Boot or physical-hardware qualification. Older pre-release installations
+must use current installation media. Desktop configuration retains its separate
+Malm history.
