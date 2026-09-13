@@ -63,6 +63,18 @@ identities distinguish new attempts without weakening immutable boot-evidence
 validation. Command-line composition tests cover repeated updates and explicit
 multiple-console settings.
 
+## Public delivery
+
+GitHub publication completed on September 13, 2026 at 18:24 UTC. The publisher
+verified all 28 assets, totaling 6,058,973,870 bytes, before publishing and then
+confirmed that the release was immutable.
+
+From the upgraded installed VM, the shipped `/usr/bin/pkg` successfully verified
+the public feed with both `releases check` and `update --check`. Discovery returned
+the exact signed manifest above and zero pending package changes. A fresh HTTPS
+download of the public bootstrap matched its expected SHA-256. The checks left
+the canonical native state unchanged, healthy and running, with no staged trial.
+
 ## Operational limits
 
 Older installations require two reboot stages: test the recovery helper, then
